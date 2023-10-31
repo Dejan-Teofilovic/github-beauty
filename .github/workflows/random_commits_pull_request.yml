@@ -1,53 +1,54 @@
-name: Beautify Github Profile
+name: Beautify GitHub Profile
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
-  generate-commits:
+  beautify:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Set Git user
+      
+    - name: Configure Git User
       run: |
-        git config user.email "dejanteofilovic2@gmail.com"
         git config user.name "Dejan-Teofilovic"
+        git config user.email "dejanteofilovic2@gmail.com"
 
-    - name: Make random number of commits (1-5)
+    - name: Create Random Number of Commits (1-5)
       run: |
         for i in $(seq 1 $((1 + $RANDOM % 5))); do
-          echo "$i" > random.txt
+          echo "Random data: $(date +%s) $RANDOM" >> random.txt
           git add random.txt
-          git commit -m "Random commit $i"
+          git commit -m "Update random.txt"
         done
+
+    - name: Fetch latest changes from main branch
+      run: git fetch origin main
+
+    - name: Merge the latest changes from main branch
+      run: git merge origin/main
 
     - name: Push commits to main branch
       run: git push origin main
 
-    - name: Create branch with random name and push
+    - name: Create a new branch with a random string name
       run: |
-        BRANCH_NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
+        BRANCH_NAME=$(cat /proc/sys/kernel/random/uuid)
         git checkout -b $BRANCH_NAME
-        git push origin $BRANCH_NAME
+
+    - name: Push new branch to GitHub
+      run: git push origin $BRANCH_NAME
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5.0.2
       with:
-        title: "Automated PR: Merging ${{ github.ref }} to main"
-        branch: ${{ github.ref }}
+        title: 'Automated PR: Random Commits'
+        commit-message: 'Add random commits'
+        branch: ${{ steps.vars.outputs.branch }}
         base: main
         delete-branch: true
 
-    - name: Merge the pull request
-      run: |
-        PR_NUMBER=$(gh pr list --base main --json number --jq '.[0].number')
-        gh pr merge $PR_NUMBER --auto --merge
-
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Merge Pull Request
+      uses: gh pr merge ${{ steps.pr.outputs.pr_number }} --merge
