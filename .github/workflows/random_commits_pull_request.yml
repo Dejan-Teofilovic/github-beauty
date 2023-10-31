@@ -1,0 +1,40 @@
+name: Random Commits & Pull Request
+
+on:
+  workflow_dispatch:
+
+jobs:
+  random_commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: 'main' # Checking out the main branch
+
+      - name: Configure Git
+        run: |
+          git config user.name "Dejan-Teofilovic"
+          git config user.email "dejanteofilovic2@gmail.com"
+
+      - name: Make random commits
+        run: |
+          COMMIT_COUNT=$((RANDOM % 5 + 1))
+          echo "Making $COMMIT_COUNT commits."
+          for i in $(seq 1 $COMMIT_COUNT); do
+            echo "Random text $RANDOM" >> random.txt
+            git add random.txt
+            git commit -m "Random commit $i of $COMMIT_COUNT"
+          done
+          BRANCH_NAME="random-commits-$RANDOM"
+          git checkout -b $BRANCH_NAME
+          git push origin $BRANCH_NAME
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v10
+        with:
+          title: "Random Commits"
+          body: "This pull request contains a set of random commits."
+          branch: ${{ env.BRANCH_NAME }} # Using the random branch name created above
+          base: 'main'
+
