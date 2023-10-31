@@ -49,6 +49,3 @@ jobs:
         branch: ${{ steps.vars.outputs.branch }}
         base: main
         delete-branch: true
-
-    - name: Merge Pull Request
-      uses: gh pr merge ${{ steps.pr.outputs.pr_number }} --merge
